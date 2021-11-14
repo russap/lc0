@@ -44,6 +44,7 @@ class AbTesting {
    void run(); 
    void testHashtable1();
    void testHashtable2(); 
+   void testAbSearch1();
 };
 
 }  // namespace lczero

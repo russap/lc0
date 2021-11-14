@@ -25,6 +25,7 @@
   Program grant you additional permission to convey the resulting work.
 */
 
+#include "benchmark/abbenchmark.h"
 #include "benchmark/benchmark.h"
 #include "benchmark/backendbench.h"
 #include "chess/board.h"
@@ -54,6 +55,7 @@ int main(int argc, const char** argv) {
     CommandLine::RegisterMode("uci", "(default) Act as UCI engine");
     CommandLine::RegisterMode("selfplay", "Play games with itself");
     CommandLine::RegisterMode("benchmark", "Quick benchmark");
+    CommandLine::RegisterMode("abbenchmark", "Quick benchmark of alpha-beta helper");
     CommandLine::RegisterMode("backendbench", "Quick benchmark of backend only");
 
     if (CommandLine::ConsumeCommand("selfplay")) {
@@ -68,6 +70,10 @@ int main(int argc, const char** argv) {
       // Backend Benchmark mode.
       BackendBenchmark benchmark;
       benchmark.Run();
+    } else if (CommandLine::ConsumeCommand("abbenchmark")) {
+      // Benchmark mode.
+      AbBenchmark abBenchmark;
+      abBenchmark.Run();
     } else {
       // Consuming optional "uci" mode.
       CommandLine::ConsumeCommand("uci");

@@ -26,6 +26,8 @@
 */
 #pragma once
 
+#include "abhelper\abhashtable.h"
+
 #include <array>
 #include <condition_variable>
 #include <functional>
@@ -46,6 +48,52 @@
 #include "utils/numa.h"
 
 namespace lczero {
+
+struct SearchData {
+  // SearchData(Position position) : position(position) {};
+  Position getCurrentPosition() { return positionList.back(); }
+
+  int thread_id;  
+  std::vector<uint64_t> hash_key_list;
+
+  int side{};
+  std::vector<Position> positionList;
+  HashTable hash_table{};
+
+  uint64_t nodes{};
+  uint64_t tablebase_hit_counter{};
+  uint64_t key{};
+
+  Move killers[100 /* MaxPly*/][2 /* MaxKillers*/];
+  uint32_t history[2][64][64];
+
+  uint8_t SpecifiedDepth{};
+};
+
+struct PrincipleVariation {
+  std::vector<Move> moveList;
+};
+
+class AlphaBetaSearch1 {
+ public:
+  int SearchInit(Position position, int ply);
+
+  int AlphaBeta(SearchData search_data, int depth, int alpha, int beta, int ply,
+                PrincipleVariation& pv);
+
+  int Evaluate(Position position);
+
+ protected:
+  void makeMove(SearchData& search_data, Move move);
+
+  void unmakeMove(SearchData& search_data) {
+    search_data.positionList.pop_back();
+    search_data.hash_key_list.pop_back();
+  }
+
+ private:
+  HashTable hash;
+};
 
 class AlphaBetaSearch {
  public:

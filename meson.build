@@ -145,6 +145,13 @@ endif
 files += [
   'src/engine.cc',
   'src/version.cc',
+  'src/abhelper/abeval.cc',
+  'src/abhelper/abhashtable.cc',
+  'src/abhelper/absearch.cc',  
+  'src/abhelper/abtest.cc',
+  'src/abhelper/misc.cc',
+  'src/abhelper/nnue.cc',
+  'src/benchmark/abbenchmark.cc',
   'src/benchmark/backendbench.cc',
   'src/benchmark/benchmark.cc',
   'src/chess/bitboard.cc',
@@ -468,6 +475,7 @@ if get_option('build_backends')
     if get_option('nvcc_ccbin') != ''
       cuda_arguments += ['-ccbin=' + get_option('nvcc_ccbin')]
     endif
+	cuda_arguments +=['-allow-unsupported-compiler']
     cuda_cc = get_option('cc_cuda') # Unfortunately option cuda_cc is reserved.
     nvcc_extra_args = []
     if cuda_cc != ''
