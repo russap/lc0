@@ -211,6 +211,9 @@ class ChessBoard {
     return (our_pieces_ | their_pieces_) - pawns() - our_king_ - their_king_ -
            rooks_ - bishops_;
   }
+  BoardSquare ourKing() const { return our_king_;}
+  BoardSquare theirKing() const { return their_king_; }
+
   BitBoard kings() const {
     return our_king_.as_board() | their_king_.as_board();
   }
