@@ -51,46 +51,26 @@ namespace lczero {
 static const int min_eval = std::numeric_limits<int>::min();
 static const int max_eval = std::numeric_limits<int>::max();
 
-struct SearchData {
-  //SearchData(Position position) : position(position) {};
-  Position getCurrentPosition() { return positionList.back(); }
-
-  int thread_id;
-  int hash_key_count;
-  uint64_t hash_key{};
-
-  int side{};
-  std::vector<Position> positionList;
-  HashTable hash_table{};
-
-  uint64_t nodes{};
-  uint64_t tablebase_hit_counter{};
-  uint64_t key{};
-
-  Move killers[100 /* MaxPly*/][2 /* MaxKillers*/];
-  uint32_t history[2][64][64];
-
-  uint8_t SpecifiedDepth{};
-};
-
-class AlphaBetaSearch1 {
- public:
-  int SearchInit(Position position) {
+int AlphaBetaSearch1::SearchInit(Position position, int ply) {
     SearchData search_data;  //= SearchData(position);
     search_data.positionList.push_back(position);
+    search_data.hash_key_list.push_back(hash.getKey(position));
 
-    for (int depth = 1;; depth++) {
-      int value = AlphaBeta(search_data, depth, min_eval, max_eval, 5);
+    PrincipleVariation pv;
+
+    for (int depth = 1; depth < ply; depth++) {
+      int value = AlphaBeta(search_data, depth, min_eval, max_eval, ply, pv);
 
       //    if (TimedOut()) break;
     }
+    return 0;
   };
 
-  int AlphaBeta(SearchData search_data, int depth, int alpha, int beta, int ply
-                /*pv_node*/) {
+  int AlphaBetaSearch1::AlphaBeta(SearchData search_data, int depth, int alpha,
+                                  int beta, int ply, PrincipleVariation& pv) {
     HashTableEntry::EntryType hashf = HashTableEntry::UPPER_BOUND;
 
-    int64_t key = 0;
+    uint64_t key = search_data.hash_key_list.back();
     HashTableResponse response = hash.get(key, depth, alpha, beta);
     if (response.IsKnownValue) {
       return response.value;
@@ -110,7 +90,7 @@ class AlphaBetaSearch1 {
 
     for (Move move : moveList) {
       makeMove(search_data, move);
-      int eval = -AlphaBeta(search_data, depth - 1, -beta, -alpha, ply + 1);
+      int eval = -AlphaBeta(search_data, depth - 1, -beta, -alpha, ply + 1, pv);
       unmakeMove(search_data);
       if (eval >= beta) {
         hash.put(key, depth, move, eval, HashTableEntry::LOWER_BOUND, 0);
@@ -127,20 +107,20 @@ class AlphaBetaSearch1 {
     return alpha;
   }
 
-  int Evaluate(Position position) { return 0; }
+  void AlphaBetaSearch1::makeMove(SearchData& search_data, Move move) {
+    //prints as white
+    std::cout << "makeMove:" + move.as_string() << std::endl;
 
- protected:
-  void makeMove(SearchData& search_data, Move move) {
-    Position position_new = Position(search_data.getCurrentPosition(), move);
-    search_data.positionList.push_back(position_new);
-  }
+    Position currentPosition = search_data.getCurrentPosition();
+    
+    Position newPosition = Position(currentPosition, move);
 
-  void unmakeMove(SearchData& search_data) {
-    search_data.positionList.pop_back();
-  }
+    search_data.positionList.push_back(newPosition);
+    // capture has happened if one of their pieces has disappeared.
+    uint64_t newKey = hash.updateKey(search_data.hash_key_list.back(), currentPosition, newPosition);
+    search_data.hash_key_list.push_back(newKey);
+  };
 
- private:
-  HashTable hash;
-};
+  int AlphaBetaSearch1::Evaluate(Position position) { return 0; }
 
 }  // namespace lczero

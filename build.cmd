@@ -13,7 +13,7 @@ set EIGEN=false
 set TEST=false
 
 rem 2. Edit the paths for the build dependencies.
-set CUDA_PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0
+set CUDA_PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.5
 set CUDNN_PATH=%CUDA_PATH%
 set OPENBLAS_PATH=C:\OpenBLAS
 set MKL_PATH=C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\windows\mkl
@@ -30,7 +30,11 @@ set CXX=cl
 set CC_LD=link
 set CXX_LD=link
 
-if exist "C:\Program Files (x86)\Microsoft Visual Studio\2019" (
+if exist "C:\Program Files\Microsoft Visual Studio\2022" (
+  where /q cl
+  if errorlevel 1 call "C:\Program Files\Microsoft Visual Studio\2022\Preview\VC\Auxiliary\Build\vcvarsall.bat" amd64
+  set backend=vs2019
+) else (if exist "C:\Program Files (x86)\Microsoft Visual Studio\2019" (
   where /q cl
   if errorlevel 1 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64
   set backend=vs2019
@@ -38,6 +42,7 @@ if exist "C:\Program Files (x86)\Microsoft Visual Studio\2019" (
   where /q cl
   if errorlevel 1 call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64
   set backend=vs2017
+)
 )
 
 set BLAS=true

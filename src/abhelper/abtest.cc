@@ -30,6 +30,7 @@
 #include <iostream>
 #include <intrin.h>
 #include "abhelper\abhashtable.h"
+#include "abhelper\absearch.h"
 #include "chess\board.h"
 #include "chess\position.h"
 
@@ -40,6 +41,7 @@ namespace lczero {
   void AbTesting::run() {
     AbTesting::testHashtable1();
     AbTesting::testHashtable2();
+    AbTesting::testAbSearch1();
   };
 
   void AbTesting::testHashtable1() {
@@ -72,5 +74,22 @@ namespace lczero {
     }
   }
 
+    void AbTesting::testAbSearch1() {
+    bool isPass = false;
+    std::string fen =
+        "5kr1/q4n2/2ppb3/4P3/1QP5/pP1BN3/P1K4R/8 b - - 2 42";
+    ChessBoard chessBoard = ChessBoard(fen);
+    Position position = Position(chessBoard, 0, 1);
+
+    AlphaBetaSearch1 abSearch;
+
+    abSearch.SearchInit(position,2);
+    if (isPass) {
+      std::cout << "testHashtable1: pass" << std::endl;
+    } else {
+      std::cout << "testHashtable1: fail" << std::endl;
+    }
+  }
+  
 
 }  // namespace lczero

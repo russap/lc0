@@ -213,6 +213,11 @@ class BitBoard {
     return {a.board_ & b.board_};
   }
 
+   // Returns bitwise XOR of two boards. ie only the differences
+  friend BitBoard operator^(const BitBoard& a, const BitBoard& b) {
+    return {a.board_ ^ b.board_};
+  }
+
   // Returns bitboard with one bit reset.
   friend BitBoard operator-(const BitBoard& a, const BoardSquare& b) {
     return {a.board_ & ~b.as_board()};
