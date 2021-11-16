@@ -42,8 +42,11 @@ namespace lczero {
 class AbTesting {
  public:
    void run(); 
-   void testHashtable1();
-   void testHashtable2(); 
+   void testKeyGeneration();
+   void testKeyGenerationImpl(std::string fen, uint64_t result, int testNumber); 
+   void testPositionKeyUpdatesCorrectly();
+   void testPositionKeyUpdatesCorrectlyImpl(std::string fen, int fenTest);
+   void testNnEval1();
    void testAbSearch1();
 };
 

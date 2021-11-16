@@ -82,13 +82,22 @@ class ZobristKeys {
    ZobristKeys() { initKeys(); };
 
    uint64_t getKey(Position position);
+   
+   uint64_t updateKey(uint64_t key, Position currentPosition, Position new_position);
 
   protected:
    void initKeys();
-   void setPiecesKey(const BitBoard& piece_board, const ChessBoard& board,
+   void setPiecesKey(bool isBlackToMove, const BitBoard& piece_board, const ChessBoard& board,
                      const AbEnum::AbPieceType& piece_type, uint64_t& key);
+   
+   void updatePiecesKey(BitBoard currentPieceBoard,
+      ChessBoard current_board,
+      BitBoard newPieceBoard,
+      ChessBoard new_board,
+      const AbEnum::AbPieceType& piece_type,
+      uint64_t& key);
 
-   void setPiecesKeyByColour(BitBoard piece_board, BitBoard color_board,
+   void setPiecesKeyByColour(BitBoard one_color_position,
                              AbEnum::AbPieceType piece_type,
                              AbEnum::AbColor color, uint64_t& key);
 
@@ -445,12 +454,14 @@ class ZobristKeys {
      HashTableResponse get(uint64_t key, int depth, int alpha, int beta) const;
 
      void put(HashTableEntry entry);
-     void HashTable::put(uint64_t key, int depth, Move move,
+     void put(uint64_t key, int depth, Move move,
                       int eval, HashTableEntry::EntryType entryType, int age);
-     void HashTable::put(uint64_t key, int depth, int eval,
+     void put(uint64_t key, int depth, int eval,
                       HashTableEntry::EntryType entryType, int age);
 
      uint64_t getKey(Position position);
+
+     uint64_t updateKey(uint64_t key, Position currentPosition, Position new_position);
 
     private:
      uint64_t entryCount_;

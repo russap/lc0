@@ -79,6 +79,10 @@ namespace lczero {
    return keyGenerator.getKey(position);
   };
 
+ uint64_t HashTable::updateKey(uint64_t key, Position position, Position new_position) {
+    return keyGenerator.updateKey(key, position, new_position);
+  };
+
   void HashTable::put(HashTableEntry entry) {
     hashTable_[entry.key % entryCount_] = entry;
   }
@@ -159,36 +163,85 @@ namespace lczero {
           piece_position_key[AbEnum::AbPieceType::KING][AbEnum::AbColor::BLACK]
                                   [board.theirKing().as_int()];
       
-    setPiecesKey(board.queens(), board, AbEnum::AbPieceType::QUEEN, key);
-    setPiecesKey(board.rooks(), board, AbEnum::AbPieceType::ROOK, key);
-    setPiecesKey(board.bishops(), board, AbEnum::AbPieceType::BISHOP, key);
-    setPiecesKey(board.knights(), board, AbEnum::AbPieceType::KNIGHT, key);
-    setPiecesKey(board.pawns(), board, AbEnum::AbPieceType::PAWN, key);
+    setPiecesKey(position.IsBlackToMove(), board.queens(), board, AbEnum::AbPieceType::QUEEN, key);
+    setPiecesKey(position.IsBlackToMove(), board.rooks(), board,
+                 AbEnum::AbPieceType::ROOK, key);
+    setPiecesKey(position.IsBlackToMove(), board.bishops(), board,
+                 AbEnum::AbPieceType::BISHOP, key);
+    setPiecesKey(position.IsBlackToMove(), board.knights(), board,
+                 AbEnum::AbPieceType::KNIGHT, key);
+    setPiecesKey(position.IsBlackToMove(), board.pawns(), board,
+                 AbEnum::AbPieceType::PAWN, key);
 
     return key;
   };
 
-  void ZobristKeys::setPiecesKey(const BitBoard& piece_board,
+  uint64_t ZobristKeys::updateKey(uint64_t key, Position currentPosition,
+      Position new_position) {
+    ChessBoard current_board = currentPosition.GetWhiteBoard();
+    ChessBoard new_board = new_position.GetWhiteBoard();
+
+    updatePiecesKey(current_board.kings(), current_board, new_board.kings(),
+                    new_board, AbEnum::KING, key);
+    updatePiecesKey(current_board.queens(), current_board, new_board.queens(),
+                    new_board, AbEnum::QUEEN, key);
+    updatePiecesKey(current_board.rooks(), current_board, new_board.rooks(),
+                    new_board, AbEnum::ROOK, key);
+    updatePiecesKey(current_board.bishops(), current_board, new_board.bishops(),
+                    new_board, AbEnum::BISHOP, key);
+    updatePiecesKey(current_board.knights(), current_board, new_board.knights(),
+                    new_board, AbEnum::KNIGHT, key);
+    updatePiecesKey(current_board.pawns(), current_board, new_board.pawns(),
+                    new_board, AbEnum::PAWN, key);
+    
+    // Side to move has changed, so flip move hash.
+    key = key ^ black_to_move_key;
+    return key;
+  }
+
+  void ZobristKeys::updatePiecesKey(BitBoard currentPieceBoard,
+      ChessBoard current_board, //Assumes WhiteBoard
+      BitBoard newPieceBoard,
+      ChessBoard new_board, //Assumes WhiteBoard
+      const AbEnum::AbPieceType& piece_type,
+      uint64_t& key) {
+
+    BitBoard ourBoardDelta = (currentPieceBoard & current_board.ours()) ^
+                          (newPieceBoard & new_board.ours());
+    if (!ourBoardDelta.empty()) {
+      setPiecesKeyByColour(ourBoardDelta, piece_type, AbEnum::WHITE, key);
+    };
+
+    BitBoard theirBoardDelta = (currentPieceBoard & current_board.theirs()) ^
+                               (newPieceBoard & new_board.theirs());
+    if (!theirBoardDelta.empty()) {
+      setPiecesKeyByColour(theirBoardDelta, piece_type, AbEnum::BLACK, key);
+    };
+  }
+
+  void ZobristKeys::setPiecesKey(bool isBlackToMove,
+                                 const BitBoard& piece_board,
                                const ChessBoard& board,
                                  const AbEnum::AbPieceType& piece_type,
                                uint64_t& key) {
     if (!piece_board.empty()) {
-      BitBoard white_pieces = board.ours();
-      BitBoard black_pieces = board.theirs();
-
-      setPiecesKeyByColour(piece_board, white_pieces, piece_type,
+      BitBoard white_pieces = //isBlackToMove ? board.theirs() : 
+          board.ours();
+      BitBoard black_pieces = //isBlackToMove ? board.ours() : 
+          board.theirs();
+            
+      setPiecesKeyByColour(piece_board & white_pieces, piece_type,
                            AbEnum::AbColor::WHITE, key);
-      setPiecesKeyByColour(piece_board, black_pieces, piece_type,
+      setPiecesKeyByColour(piece_board & black_pieces, piece_type,
                            AbEnum::AbColor::BLACK, key);
     }
   };
 
-  void ZobristKeys::setPiecesKeyByColour(BitBoard piece_board,
-                                         BitBoard color_board,
+  void ZobristKeys::setPiecesKeyByColour(BitBoard one_color_position,
                                          AbEnum::AbPieceType piece_type,
                                          AbEnum::AbColor color,
                             uint64_t& key) {
-    BitBoard one_color_position = piece_board & color_board;
+ 
     if (!one_color_position.empty()) {
       int piece_index = 0;
       int piece_total = one_color_position.count_few();

@@ -121,6 +121,7 @@ int AlphaBetaSearch1::SearchInit(Position position, int ply) {
     search_data.hash_key_list.push_back(newKey);
   };
 
-  int AlphaBetaSearch1::Evaluate(Position position) { return 0; }
+  int AlphaBetaSearch1::Evaluate(Position position) { 
+      return 0; }
 
 }  // namespace lczero

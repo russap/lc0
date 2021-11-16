@@ -145,7 +145,7 @@ void decode_fen(const char* fen_str, int* player, int* castle,
   } else {
       epsquare = (int)(strchr(file_name,*p) - file_name);
       p++;
-      epsquare += 16 * (int)(strchr(rank_name,*p) - rank_name);
+      epsquare += 8 * (int)(strchr(rank_name,*p) - rank_name); // multiplier was 16.
       p++;
   }
   square[index] = epsquare;

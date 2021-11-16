@@ -32,5 +32,7 @@ namespace lczero {
 class AlphaBetaEval {
  public:
   int eval(Position& position);
-};
+  void getPiecePositions(BitBoard one_color_position, int &index, int* pieces,
+                                     int* squares, int pieceType);
+  };
 }  // namespace lczero
