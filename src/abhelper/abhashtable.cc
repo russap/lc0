@@ -43,9 +43,8 @@ namespace lczero {
 
   int hashIndex = key % entryCount_;
   HashTableEntry entry = hashTable_[hashIndex];
-
-  // confirm the keys match and we don't have a collision.
   response.bestMove = entry.move;
+  // confirm the keys match and we don't have a collision.
   if (entry.key == key) {
     if (entry.depth >= depth) {
       switch (entry.entryType) {
@@ -70,8 +69,9 @@ namespace lczero {
           }
           break;
       }
-    }
+    }    
   }
+  // ISKnownValue defaults to false, if code falls through and is not expicitly set.
   return response;
 };
  

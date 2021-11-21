@@ -27,6 +27,7 @@
 #pragma once
 
 #include "abhelper\abhashtable.h"
+#include "abhelper\abeval.h"
 
 #include <array>
 #include <condition_variable>
@@ -34,6 +35,7 @@
 #include <optional>
 #include <shared_mutex>
 #include <thread>
+#include <map>
 
 #include "chess/callbacks.h"
 #include "chess/uciloop.h"
@@ -74,6 +76,12 @@ struct PrincipleVariation {
   std::vector<Move> moveList;
 };
 
+struct Capture {
+  AbEnum::AbPieceType moved_piece;
+  AbEnum::AbPieceType captured_piece;
+  Move move;
+};
+
 class AlphaBetaSearch1 {
  public:
   int SearchInit(Position position, int ply);
@@ -82,8 +90,16 @@ class AlphaBetaSearch1 {
                 PrincipleVariation& pv);
 
   int Evaluate(Position position);
+  bool IsDraw(SearchData search_data);
 
  protected:
+  std::multimap<int, Move, std::greater<int>> GetOrderedMoves(
+      Position currentPosition, uint64_t key);
+  const int getMoveOrderKey(Position position, Move move);
+  bool isCapture(Position currentPosition, Move move);
+  std::pair<AbEnum::AbPieceType, AbEnum::AbPieceType> getMoveCapturePieces(
+      Position position, Move move);
+  AbEnum::AbPieceType getPieceAtSquare(uint64_t key, ChessBoard board);
   void makeMove(SearchData& search_data, Move move);
 
   void unmakeMove(SearchData& search_data) {
@@ -93,6 +109,7 @@ class AlphaBetaSearch1 {
 
  private:
   HashTable hash;
+  AlphaBetaEval nnue;
 };
 
 class AlphaBetaSearch {

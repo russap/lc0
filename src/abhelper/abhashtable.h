@@ -42,7 +42,7 @@ namespace lczero {
 namespace AbEnum {
     enum AbPieceType : uint8_t {
       // clang-format off
-        KING = 0, QUEEN, ROOK, BISHOP, KNIGHT, PAWN
+        PAWN = 0, KNIGHT, BISHOP, ROOK, QUEEN, KING
       // clang-format on
     };
 

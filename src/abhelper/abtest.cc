@@ -24,6 +24,7 @@
   terms of the respective license agreement, the licensors of this
   Program grant you additional permission to convey the resulting work.
 */
+#pragma once
 
 #include "abhelper\abtest.h"
 
@@ -44,7 +45,7 @@ namespace lczero {
     testKeyGeneration();
     testPositionKeyUpdatesCorrectly();
     testNnEval1();
-  //  AbTesting::testAbSearch1();
+    testAbSearch1();
   };
 
   void AbTesting::testKeyGeneration() {
