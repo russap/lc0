@@ -66,14 +66,15 @@ struct SearchData {
   uint64_t tablebase_hit_counter{};
   uint64_t key{};
 
-  Move killers[100 /* MaxPly*/][2 /* MaxKillers*/];
+  std::vector<std::vector<std::pair<AbEnum::AbPieceType, Move>>> killers;
+  //killers[100 /* MaxPly*/][2 /* MaxKillers*/];
   uint32_t history[2][64][64];
 
   uint8_t SpecifiedDepth{};
 };
 
 struct PrincipleVariation {
-  std::vector<Move> moveList;
+  std::deque<Move> moveList;
 };
 
 struct Capture {
@@ -86,19 +87,21 @@ class AlphaBetaSearch1 {
  public:
   int SearchInit(Position position, int ply);
 
-  int AlphaBeta(SearchData search_data, int depth, int alpha, int beta, int ply,
+  int AlphaBeta(SearchData& search_data, int depth, int alpha, int beta, int ply,
                 PrincipleVariation& pv);
 
   int Evaluate(Position position);
   bool IsDraw(SearchData search_data);
 
  protected:
+  int QuiesceSearch(Position currentPosition, int alpha,
+                                      int beta, int ply);
   std::multimap<int, Move, std::greater<int>> GetOrderedMoves(
       Position currentPosition, uint64_t key);
-  const int getMoveOrderKey(Position position, Move move);
-  bool isCapture(Position currentPosition, Move move);
+  const int getMoveOrderKey(ChessBoard board, uint64_t bbInt, Move move);
+  bool isCapture(uint64_t bbInt, Move move);
   std::pair<AbEnum::AbPieceType, AbEnum::AbPieceType> getMoveCapturePieces(
-      Position position, Move move);
+      ChessBoard board, Move move);
   AbEnum::AbPieceType getPieceAtSquare(uint64_t key, ChessBoard board);
   void makeMove(SearchData& search_data, Move move);
 
