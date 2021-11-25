@@ -36,6 +36,7 @@
 #include <shared_mutex>
 #include <thread>
 #include <map>
+#include <set>
 
 #include "chess/callbacks.h"
 #include "chess/uciloop.h"
@@ -49,10 +50,11 @@
 #include "utils/mutex.h"
 #include "utils/numa.h"
 
+
 namespace lczero {
 
 struct SearchData {
-  // SearchData(Position position) : position(position) {};
+
   Position getCurrentPosition() { return positionList.back(); }
 
   int thread_id;  
@@ -66,14 +68,14 @@ struct SearchData {
   uint64_t tablebase_hit_counter{};
   uint64_t key{};
 
-  std::vector<std::vector<std::pair<AbEnum::AbPieceType, Move>>> killers;
-  //killers[100 /* MaxPly*/][2 /* MaxKillers*/];
+  std::set<Move> killers[50];
   uint32_t history[2][64][64];
 
   uint8_t SpecifiedDepth{};
 };
 
 struct PrincipleVariation {
+  std::string printMoves();
   std::deque<Move> moveList;
 };
 
@@ -97,6 +99,7 @@ class AlphaBetaSearch1 {
   int QuiesceSearch(Position currentPosition, int alpha,
                                       int beta, int ply);
   std::multimap<int, Move, std::greater<int>> GetOrderedMoves(
+      std::set<Move> killerMoves, 
       Position currentPosition, uint64_t key);
   const int getMoveOrderKey(ChessBoard board, uint64_t bbInt, Move move);
   bool isCapture(uint64_t bbInt, Move move);

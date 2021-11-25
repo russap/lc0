@@ -50,8 +50,8 @@
 
 namespace lczero {
 
-static const int min_eval = std::numeric_limits<int>::min();
-static const int max_eval = std::numeric_limits<int>::max();
+static const int min_eval = -100000;
+static const int max_eval = 100000;
 static const int MAX_PLY = 50;
 
 static const int mvvLva[6][6] = {
@@ -61,8 +61,20 @@ static const int mvvLva[6][6] = {
     {45, 44, 43, 42, 41, 40},  // victim Rook
     {55, 54, 53, 52, 51, 50},  // victim Queen    
 };
-static const int bestMoveMvvLva = 100;
 
+static const int bestMoveMvvLva = 100;
+static const int killerMoveMvvLva = 5;
+
+std::string PrincipleVariation::printMoves() {
+  std::string output = "";
+  if (moveList.size() > 0) {
+    for (int i = 0; i < moveList.size() - 1; i++) {
+      output += moveList[i].as_string() + ",";
+    }
+    output += moveList[moveList.size() - 1].as_string();
+  }
+  return output;
+}
 int AlphaBetaSearch1::SearchInit(Position position, int ply) {
     SearchData search_data;  //= SearchData(position);
     search_data.positionList.push_back(position);
@@ -75,10 +87,8 @@ int AlphaBetaSearch1::SearchInit(Position position, int ply) {
       value = AlphaBeta(search_data, depth, min_eval, max_eval, 0 /* ply */, pv);
       std::cout << " AB search end: depth=" << depth << ",nodes=" << search_data.nodes <<
           ",value = " << value
-                << ",pv=";
-      for (int i = 0; i < pv.moveList.size(); i++) {
-        std::cout << pv.moveList[i].as_string() << ",";       
-      } 
+                << ",pv=" << pv.printMoves();
+      
       std::cout << std::endl;
     }
     return value;
@@ -90,7 +100,6 @@ int AlphaBetaSearch1::SearchInit(Position position, int ply) {
     HashTableEntry::EntryType hashf = HashTableEntry::UPPER_BOUND;
  
 
-    // hash first follows brucemo, xiphos has it the other way around
     uint64_t key = search_data.hash_key_list.back();
     HashTableResponse response = hash.get(key, depth, alpha, beta);
     if (response.IsKnownValue) {
@@ -118,7 +127,9 @@ int AlphaBetaSearch1::SearchInit(Position position, int ply) {
     PrincipleVariation childPVLine; 
     
     std::multimap<int, Move, std::greater<int>> moveList =
-        GetOrderedMoves(currentPosition, key);
+        GetOrderedMoves(
+            search_data.killers[ply], 
+            currentPosition, key);
 
     Move bestMove;
     int bestEval = alpha;
@@ -147,8 +158,10 @@ int AlphaBetaSearch1::SearchInit(Position position, int ply) {
       }
       if (eval >= beta) {
         hashf = HashTableEntry::LOWER_BOUND;
-     //     hash.put(key, depth, move, eval, , 0);
-      //  search_data.killers.
+        bool isCapture = elem.first > 0;
+        if (!isCapture) {
+          search_data.killers[ply].insert(move);
+        }
         break;
       }
       if (eval > alpha) {
@@ -180,8 +193,11 @@ int AlphaBetaSearch1::SearchInit(Position position, int ply) {
       alpha = eval;
     }
 
+    std::set<Move> killerMoves;
     std::multimap<int, Move, std::greater<int>> moveList =
-        GetOrderedMoves(currentPosition, 0);
+        GetOrderedMoves(
+            killerMoves, 
+            currentPosition, 0);
 
    for (std::pair<int, Move> elem : moveList) {
       // skip non captures
@@ -206,6 +222,7 @@ int AlphaBetaSearch1::SearchInit(Position position, int ply) {
   }
 
   std::multimap<int, Move, std::greater<int>> AlphaBetaSearch1::GetOrderedMoves(
+      std::set<Move> killerMoves, 
       Position currentPosition, uint64_t key) {
     MoveList moveList = currentPosition.GetBoard().GenerateLegalMoves();
     std::multimap<int, Move, std::greater<int>> mmapOfPos;
@@ -230,8 +247,13 @@ int AlphaBetaSearch1::SearchInit(Position position, int ply) {
       if (move == bestMove) {
         continue;
       }
-      mmapOfPos.insert(
-          std::pair<int, Move>(getMoveOrderKey(board, bbInt, move), move));
+      bool iskillerMove = killerMoves.find(move) != killerMoves.end();
+      if (iskillerMove) {
+        mmapOfPos.insert(std::pair<int, Move>(killerMoveMvvLva, move));
+      } else {
+        mmapOfPos.insert(
+            std::pair<int, Move>(getMoveOrderKey(board, bbInt, move), move));
+      }
     } 
    
     return mmapOfPos;
@@ -256,9 +278,6 @@ int AlphaBetaSearch1::SearchInit(Position position, int ply) {
     uint64_t moveTo = move.to().as_board();
     uint64_t key = moveTo & bbInt;
     
-    //if (key != 0) {
-    //  std::cout << "Capture!" << std::endl;
-    //}
     return key != 0;
   }
 
