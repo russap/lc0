@@ -78,7 +78,6 @@ class ChessBoard {
   // middle of the board. (what was on rank 1 appears on rank 8, what was
   // on file b remains on file b).
   void Mirror();
-
   // Generates list of possible moves for "ours" (white), but may leave king
   // under check.
   MoveList GeneratePseudolegalMoves() const;
@@ -219,6 +218,7 @@ class ChessBoard {
   }
   const Castlings& castlings() const { return castlings_; }
   bool flipped() const { return flipped_; }
+  void flipSideToMove() { flipped_ = !flipped_; }
 
   bool operator==(const ChessBoard& other) const {
     return (our_pieces_ == other.our_pieces_) &&

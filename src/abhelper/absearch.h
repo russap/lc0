@@ -69,9 +69,8 @@ struct SearchData {
   uint64_t key{};
 
   std::set<Move> killers[50];
-  uint32_t history[2][64][64];
-
-  uint8_t SpecifiedDepth{};
+  //uint32_t history[2][64][64];
+  bool isNullCheckNeeded = true;
 };
 
 struct PrincipleVariation {
@@ -91,7 +90,8 @@ class AlphaBetaSearch1 {
 
   int AlphaBeta(SearchData& search_data, int depth, int alpha, int beta, int ply,
                 PrincipleVariation& pv);
-
+  int BasicAlphaBeta(SearchData& search_data, int depth, int alpha, int beta,
+                int ply, PrincipleVariation& pv);
   int Evaluate(Position position);
   bool IsDraw(SearchData search_data);
 

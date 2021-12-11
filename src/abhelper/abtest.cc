@@ -133,7 +133,7 @@ namespace lczero {
 
     AlphaBetaSearch1 abSearch;
 
-    abSearch.SearchInit(position,3);
+    abSearch.SearchInit(position,8);
     if (isPass) {
       std::cout << "testHashtable1: pass" << std::endl;
     } else {

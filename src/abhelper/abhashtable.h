@@ -448,7 +448,7 @@ class ZobristKeys {
 
    class HashTable {
     public:
-     HashTable(uint64_t entryCount = 128)
+     HashTable(uint64_t entryCount = 10000)
          : entryCount_(entryCount), hashTable_(entryCount){};
 
      HashTableResponse get(uint64_t key, int depth, int alpha, int beta) const;

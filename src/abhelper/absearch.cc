@@ -53,6 +53,7 @@ namespace lczero {
 static const int min_eval = -100000;
 static const int max_eval = 100000;
 static const int MAX_PLY = 50;
+static const int NULL_MOVE_REDUCTION = 2;
 
 static const int mvvLva[6][6] = {
     {15, 14, 13, 12, 11, 10},  // victim Pawn
@@ -96,7 +97,7 @@ int AlphaBetaSearch1::SearchInit(Position position, int ply) {
 
   int AlphaBetaSearch1::AlphaBeta(SearchData& search_data, int depth, int alpha,
                                   int beta, int ply, PrincipleVariation& pv) {
-    std::cout << " AB search ply: " << ply << (depth == 0 ? ", (leaf-node)": "") << std::endl;
+   // std::cout << " AB search ply: " << ply << (depth == 0 ? ", (leaf-node)": "") << std::endl;
     HashTableEntry::EntryType hashf = HashTableEntry::UPPER_BOUND;
  
 
@@ -124,8 +125,23 @@ int AlphaBetaSearch1::SearchInit(Position position, int ply) {
     if (!isRoot && IsDraw(search_data)) {
       return 0;
     }
-    PrincipleVariation childPVLine; 
-    
+    PrincipleVariation childPVLine;
+
+    bool bIsNullMoveCheckNeeded = search_data.isNullCheckNeeded && (depth >= (NULL_MOVE_REDUCTION + 1)) &&
+                             !currentPosition.GetBoard().IsUnderCheck();
+    if (bIsNullMoveCheckNeeded) {
+      currentPosition.flipSideToMove(); //nullMove
+      search_data.isNullCheckNeeded = false; //no null move check inside the null move check
+      int eval = -AlphaBeta(search_data, depth - 1 - NULL_MOVE_REDUCTION, -beta, -beta + 100, ply + 1,
+                        childPVLine);
+      currentPosition.flipSideToMove();  // undo nullMove
+      search_data.isNullCheckNeeded = true;
+      childPVLine.moveList.empty();
+      if (eval > beta) {
+        return beta;
+      }
+    }
+ 
     std::multimap<int, Move, std::greater<int>> moveList =
         GetOrderedMoves(
             search_data.killers[ply], 
@@ -134,19 +150,30 @@ int AlphaBetaSearch1::SearchInit(Position position, int ply) {
     Move bestMove;
     int bestEval = alpha;
     int moveNumber = 0;
+    bool isPvFound = false;
     for (std::pair<int, Move> elem : moveList) {
       moveNumber++;
       Move move = elem.second;
       std::string move_data = move.as_string();
       makeMove(search_data, move);
-      int eval = -AlphaBeta(search_data, depth - 1, -beta, -alpha, ply + 1,
+      int eval = 0;
+      if (isPvFound) { //PV search
+        eval = -AlphaBeta(search_data, depth - 1, -alpha - 100, -alpha, ply + 1,
+                          childPVLine);
+        if (eval > alpha && eval < beta) {
+          eval = -AlphaBeta(search_data, depth - 1, -beta, -alpha, ply + 1,
                             childPVLine);
-      std::cout << std::string(2 * ply, ' ') << (ply + 1) << ":"
+        }
+      } else {
+        eval = -AlphaBeta(search_data, depth - 1, -beta, -alpha, ply + 1,
+                              childPVLine);
+      }
+      /* std::cout << std::string(2 * ply, ' ') << (ply + 1) << ":"
                 << moveNumber
                 << " "
                 << move_data
                 << "(" << eval << ")"
-                << std::endl;
+                << std::endl;*/
       unmakeMove(search_data);
       if (eval > bestEval) {
         bestEval = eval;
@@ -166,7 +193,90 @@ int AlphaBetaSearch1::SearchInit(Position position, int ply) {
       }
       if (eval > alpha) {
         hashf = HashTableEntry::EXACT;
-               
+        isPvFound = true;
+        alpha = eval;
+      }
+      childPVLine.moveList.clear();
+    }
+    hash.put(key, depth, bestMove, bestEval, hashf, 0);
+
+    if (moveList.empty()) {
+      if (currentPosition.GetBoard().IsUnderCheck()) {
+        return min_eval + ply;
+      } else {
+        return 0;
+      };
+    };
+    return bestEval;
+  }
+
+    int AlphaBetaSearch1::BasicAlphaBeta(SearchData& search_data, int depth, int alpha,
+                                  int beta, int ply, PrincipleVariation& pv) {
+    std::cout << " AB search ply: " << ply
+              << (depth == 0 ? ", (leaf-node)" : "") << std::endl;
+    HashTableEntry::EntryType hashf = HashTableEntry::UPPER_BOUND;
+
+    uint64_t key = search_data.hash_key_list.back();
+    HashTableResponse response = hash.get(key, depth, alpha, beta);
+    if (response.IsKnownValue) {
+      search_data.nodes++;
+      return response.value;
+    }
+
+    Position currentPosition = search_data.getCurrentPosition();
+    if (depth <= 0) {
+      int eval = QuiesceSearch(currentPosition, alpha, beta, ply);
+      hash.put(key, depth, eval, HashTableEntry::EXACT, 0);
+      return eval;
+    }
+
+    search_data.nodes++;
+
+    if (ply >= MAX_PLY) {
+      return Evaluate(search_data.positionList.back());
+    }
+
+    bool isRoot = ply == 0;
+    if (!isRoot && IsDraw(search_data)) {
+      return 0;
+    }
+    PrincipleVariation childPVLine;
+
+    std::multimap<int, Move, std::greater<int>> moveList =
+        GetOrderedMoves(search_data.killers[ply], currentPosition, key);
+
+    Move bestMove;
+    int bestEval = alpha;
+    int moveNumber = 0;
+    for (std::pair<int, Move> elem : moveList) {
+      moveNumber++;
+      Move move = elem.second;
+      std::string move_data = move.as_string();
+      makeMove(search_data, move);
+      int eval = -AlphaBeta(search_data, depth - 1, -beta, -alpha, ply + 1,
+                            childPVLine);
+      std::cout << std::string(2 * ply, ' ') << (ply + 1) << ":" << moveNumber
+                << " " << move_data << "(" << eval << ")" << std::endl;
+      unmakeMove(search_data);
+      if (eval > bestEval) {
+        bestEval = eval;
+        bestMove = move;
+
+        pv.moveList.clear();
+        pv = childPVLine;
+        pv.moveList.push_front(move);
+      }
+      if (eval >= beta) {
+        hashf = HashTableEntry::LOWER_BOUND;
+        bool isCapture = elem.first > 0;
+        if (!isCapture) {
+          search_data.killers[ply].insert(move);
+        }
+        break;
+      }
+      if (eval > alpha) {
+        hashf = HashTableEntry::EXACT;
+
         alpha = eval;
       }
       childPVLine.moveList.clear();

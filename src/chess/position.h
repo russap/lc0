@@ -42,6 +42,7 @@ class Position {
 
   uint64_t Hash() const;
   bool IsBlackToMove() const { return us_board_.flipped(); }
+  void flipSideToMove() { us_board_.flipSideToMove(); }
 
   // Number of half-moves since beginning of the game.
   int GetGamePly() const { return ply_count_; }
